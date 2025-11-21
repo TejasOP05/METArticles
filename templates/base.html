@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Centre of Pharmacy Practice Excellence - MET Institute of Pharmacy{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
+                <div class="d-flex align-items-center">
+                    <img src="{{ url_for('static', filename='images/cppe_logo.png') }}" alt="CPPE Logo" height="50" class="me-3">
+                    <img src="{{ url_for('static', filename='images/met_logo.png') }}" alt="MET Institute Logo" height="50" class="me-3">
+                    <div class="d-flex flex-column">
+                        <strong class="fs-6 mb-0">Centre of Pharmacy Practice Excellence</strong>
+                        <small class="text-light-emphasis">MET Institute of Pharmacy</small>
+                    </div>
+                </div>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('about') }}">About Us</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="articlesDropdown" role="button" data-bs-toggle="dropdown">
+                            Articles
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% if current_user.is_authenticated and current_user.role in ['author', 'admin'] %}
+                            <li><a class="dropdown-item" href="{{ url_for('submit_article') }}">
+                                <i class="fas fa-plus me-2"></i>Post Article</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('my_articles') }}">
+                                <i class="fas fa-file-alt me-2"></i>My Articles</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="{{ url_for('articles') }}">
+                                <i class="fas fa-list me-2"></i>View Articles</a></li>
+                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#rulesModal">
+                                <i class="fas fa-info-circle me-2"></i>Rules</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="downloadTemplate()">
+                                <i class="fas fa-download me-2"></i>Template Download</a></li>
+                        </ul>
+                    </li>
+                    {% if current_user.is_authenticated and current_user.is_supervisor() %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="supervisorDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-shield me-1"></i>Supervisor
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('approval_dashboard') }}">
+                                <i class="fas fa-tasks me-2"></i>Approval Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('user_management') }}">
+                                <i class="fas fa-users-cog me-2"></i>User Management</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>{{ current_user.full_name }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><span class="dropdown-item-text small">{{ current_user.role.title() }}</span></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('change_password') }}">
+                                <i class="fas fa-key me-2"></i>Change Password</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Sign Out</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('register') }}">Create Account</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('login') }}">Sign In</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="container mt-3">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="{{ url_for('static', filename='images/cppe_logo.png') }}" alt="CPPE Logo" height="40" class="me-3">
+                        <img src="{{ url_for('static', filename='images/met_logo.png') }}" alt="MET Institute Logo" height="40" class="me-3">
+                    </div>
+                    <h5>Centre of Pharmacy Practice Excellence</h5>
+                    <h6 class="text-light-emphasis">MET Institute of Pharmacy</h6>
+                    <p>Share Knowledge, Inspire Ideas</p>
+                    <p class="small">A platform for academic excellence and research collaboration.</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('articles') }}" class="text-light text-decoration-none">Browse Articles</a></li>
+                        <li><a href="{{ url_for('about') }}" class="text-light text-decoration-none">About Us</a></li>
+                        {% if not current_user.is_authenticated %}
+                        <li><a href="{{ url_for('register') }}" class="text-light text-decoration-none">Join Us</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6>Contact Info</h6>
+                    <p class="small mb-1"><i class="fas fa-envelope me-2"></i>info@metarticles.edu</p>
+                    <p class="small mb-1"><i class="fas fa-phone me-2"></i>+1 (555) 123-4567</p>
+                    <p class="small"><i class="fas fa-map-marker-alt me-2"></i>MET Campus, Research Wing</p>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center">
+                <p class="small mb-0">&copy; 2025 Centre of Pharmacy Practice Excellence - MET Institute of Pharmacy. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Rules Modal -->
+    <div class="modal fade" id="rulesModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Article Submission Rules</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>General Guidelines:</h6>
+                    <ul>
+                        <li>Articles must be original research or review papers</li>
+                        <li>Only PDF format is accepted</li>
+                        <li>Maximum file size: 16MB</li>
+                        <li>Articles must be properly formatted and cited</li>
+                        <li>Plagiarism will result in immediate rejection</li>
+                    </ul>
+                    <h6>Review Process:</h6>
+                    <ul>
+                        <li>All submissions undergo peer review</li>
+                        <li>Review typically takes 5-10 business days</li>
+                        <li>Authors will be notified of decisions via email</li>
+                        <li>Rejected articles can be revised and resubmitted</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

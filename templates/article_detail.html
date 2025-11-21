@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}{{ article.title }} - MET Articles{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Article Header -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="badge bg-primary fs-6">{{ article.category.replace('_', ' ').title() }}</span>
+                        {% if article.is_approved %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check me-1"></i>Approved
+                        </span>
+                        {% elif article.is_pending %}
+                        <span class="badge bg-warning">
+                            <i class="fas fa-clock me-1"></i>Under Review
+                        </span>
+                        {% else %}
+                        <span class="badge bg-danger">
+                            <i class="fas fa-times me-1"></i>Rejected
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <h1 class="h2 mb-3">{{ article.title }}</h1>
+                    
+                    <!-- Author and Date Info -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-1">Author</h6>
+                            <p class="mb-0">
+                                <i class="fas fa-user me-2"></i>{{ article.author.full_name }}
+                            </p>
+                            {% if article.author.email and (current_user.is_authenticated and current_user.is_supervisor()) %}
+                            <small class="text-muted">{{ article.author.email }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-1">Publication Date</h6>
+                            <p class="mb-0">
+                                <i class="fas fa-calendar me-2"></i>{{ article.submitted_at.strftime('%B %d, %Y') }}
+                            </p>
+                            {% if article.reviewed_at %}
+                            <small class="text-muted">Reviewed: {{ article.reviewed_at.strftime('%b %d, %Y') }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Keywords -->
+                    {% if article.keywords %}
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Keywords</h6>
+                        {% for keyword in article.keywords.split(',') %}
+                        <span class="badge bg-light text-dark me-1">#{{ keyword.strip() }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Download Stats -->
+                    <div class="border-top pt-3">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="h4 text-primary">{{ article.download_count }}</div>
+                                <small class="text-muted">Downloads</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="h4 text-primary">{{ format_file_size(article.file_size) }}</div>
+                                <small class="text-muted">File Size</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="h4 text-primary">PDF</div>
+                                <small class="text-muted">Format</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Abstract -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt me-2"></i>Abstract
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-justify">{{ article.abstract }}</p>
+                </div>
+            </div>
+
+            <!-- Comments Section (for supervisors) -->
+            {% if current_user.is_authenticated and current_user.is_supervisor() and article.comments %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comments me-2"></i>Review Comments
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for comment in article.comments %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong>{{ comment.user.full_name }}</strong>
+                            <small class="text-muted">{{ comment.created_at.strftime('%b %d, %Y at %I:%M %p') }}</small>
+                        </div>
+                        <p class="mt-2 mb-0">{{ comment.comment }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Action Buttons -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-download me-2"></i>Download Article
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if article.is_approved %}
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-success btn-lg" 
+                                data-bs-toggle="modal" data-bs-target="#previewModal">
+                            <i class="fas fa-eye me-2"></i>Preview PDF
+                        </button>
+                        <a href="{{ url_for('download_article', id=article.id) }}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-download me-2"></i>Download PDF
+                        </a>
+                    </div>
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-file-pdf me-1"></i>{{ article.original_filename }}
+                        </small>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning text-center">
+                        <i class="fas fa-lock me-2"></i>
+                        Article not yet approved for download
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Review Actions (for supervisors) -->
+            {% if current_user.is_authenticated and current_user.is_supervisor() and article.is_pending %}
+            <div class="card shadow-sm mb-4 border-warning">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-gavel me-2"></i>Review Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('review_article', id=article.id) }}" 
+                           class="btn btn-warning">
+                            <i class="fas fa-edit me-2"></i>Review Article
+                        </a>
+                        <a href="{{ url_for('approval_dashboard') }}" 
+                           class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Article Info -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Article Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row small">
+                        <dt class="col-sm-4">Submitted:</dt>
+                        <dd class="col-sm-8">{{ article.submitted_at.strftime('%b %d, %Y') }}</dd>
+                        
+                        {% if article.reviewed_at %}
+                        <dt class="col-sm-4">Reviewed:</dt>
+                        <dd class="col-sm-8">{{ article.reviewed_at.strftime('%b %d, %Y') }}</dd>
+                        {% endif %}
+                        
+                        {% if article.reviewer %}
+                        <dt class="col-sm-4">Reviewer:</dt>
+                        <dd class="col-sm-8">{{ article.reviewer.full_name }}</dd>
+                        {% endif %}
+                        
+                        <dt class="col-sm-4">Category:</dt>
+                        <dd class="col-sm-8">{{ article.category.replace('_', ' ').title() }}</dd>
+                        
+                        <dt class="col-sm-4">File Size:</dt>
+                        <dd class="col-sm-8">{{ format_file_size(article.file_size) }}</dd>
+                        
+                        <dt class="col-sm-4">Downloads:</dt>
+                        <dd class="col-sm-8">{{ article.download_count }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Related Articles -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-link me-2"></i>Related Articles
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Coming soon: Articles related to this category will be shown here.</p>
+                    <a href="{{ url_for('articles', category=article.category) }}" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-search me-1"></i>Browse {{ article.category.replace('_', ' ').title() }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Preview Modal -->
+    <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl pdf-preview-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="previewModalLabel">
+                        <i class="fas fa-file-pdf me-2"></i>{{ article.title }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    {% if article.is_approved %}
+                    <iframe src="{{ url_for('preview_article', id=article.id) }}" 
+                            class="pdf-preview-iframe"
+                            title="{{ article.title }} - PDF Preview">
+                        <p>Your browser does not support PDFs. 
+                           <a href="{{ url_for('download_article', id=article.id) }}">Download the PDF</a> instead.</p>
+                    </iframe>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <a href="{{ url_for('download_article', id=article.id) }}" 
+                       class="btn btn-primary">
+                        <i class="fas fa-download me-2"></i>Download PDF
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="mt-4">
+        <a href="{{ url_for('articles') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Articles
+        </a>
+        {% if current_user.is_authenticated and current_user.id == article.author_id %}
+        <span class="badge bg-info ms-2">Your Article</span>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

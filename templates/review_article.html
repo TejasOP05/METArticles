@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Review Article - MET Articles{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Article Details -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-warning text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-gavel me-2"></i>Article Review
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <h3>{{ article.title }}</h3>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Author:</strong> {{ article.author.full_name }}<br>
+                            <strong>Email:</strong> {{ article.author.email }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Category:</strong> {{ article.category.replace('_', ' ').title() }}<br>
+                            <strong>Submitted:</strong> {{ article.submitted_at.strftime('%B %d, %Y') }}
+                        </div>
+                    </div>
+
+                    {% if article.keywords %}
+                    <div class="mb-3">
+                        <strong>Keywords:</strong>
+                        {% for keyword in article.keywords.split(',') %}
+                        <span class="badge bg-light text-dark me-1">#{{ keyword.strip() }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <strong>Abstract:</strong>
+                        <p class="mt-2">{{ article.abstract }}</p>
+                    </div>
+
+                    <div class="border-top pt-3">
+                        <strong>File Information:</strong><br>
+                        <i class="fas fa-file-pdf me-1"></i>{{ article.original_filename }} 
+                        ({{ format_file_size(article.file_size) }})
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review Form -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>Submit Review
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.status.label(class="form-label fw-bold") }}
+                            {{ form.status(class="form-select" + (" is-invalid" if form.status.errors else "")) }}
+                            {% if form.status.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.status.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.comment.label(class="form-label fw-bold") }}
+                            {{ form.comment(class="form-control" + (" is-invalid" if form.comment.errors else ""), rows="4", placeholder="Provide detailed feedback for the author...") }}
+                            {% if form.comment.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.comment.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Optional: Provide constructive feedback to help the author improve their work.</div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-info-circle me-2"></i>Review Guidelines
+                            </h6>
+                            <ul class="mb-0 small">
+                                <li>Evaluate the article's originality, methodology, and contribution to the field</li>
+                                <li>Check for proper formatting, citations, and academic standards</li>
+                                <li>Provide constructive feedback to help authors improve their work</li>
+                                <li>Be fair and professional in your assessment</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            {{ form.submit(class="btn btn-warning btn-lg") }}
+                            <a href="{{ url_for('approval_dashboard') }}" class="btn btn-outline-secondary btn-lg">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Download Article -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-download me-2"></i>Review Material
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid">
+                        <a href="{{ url_for('download_article', id=article.id) }}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-download me-2"></i>Download PDF
+                        </a>
+                    </div>
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-file-pdf me-1"></i>{{ article.original_filename }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review Checklist -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-tasks me-2"></i>Review Checklist
+                    </h6>
+                </div>
+                <div class="card-body small">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="check1">
+                        <label class="form-check-label" for="check1">
+                            Content is original and not plagiarized
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="check2">
+                        <label class="form-check-label" for="check2">
+                            Research methodology is sound
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="check3">
+                        <label class="form-check-label" for="check3">
+                            Citations and references are proper
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="check4">
+                        <label class="form-check-label" for="check4">
+                            Writing quality meets academic standards
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="check5">
+                        <label class="form-check-label" for="check5">
+                            Contributes value to the field
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Article Stats
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row small mb-0">
+                        <dt class="col-6">File Size:</dt>
+                        <dd class="col-6">{{ format_file_size(article.file_size) }}</dd>
+                        
+                        <dt class="col-6">Submitted:</dt>
+                        <dd class="col-6">{{ article.submitted_at.strftime('%b %d, %Y') }}</dd>
+                        
+                        <dt class="col-6">Days Pending:</dt>
+                        <dd class="col-6">{{ (moment().date() - article.submitted_at.date()).days if moment else 'N/A' }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

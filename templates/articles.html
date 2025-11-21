@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Articles - MET Articles{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-book-open me-2 text-primary"></i>Published Articles
+        </h2>
+        {% if current_user.is_authenticated and current_user.role in ['author', 'admin'] %}
+        <a href="{{ url_for('submit_article') }}" class="btn btn-success">
+            <i class="fas fa-plus me-2"></i>Submit Article
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Search Articles</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search }}" placeholder="Search by title, abstract, or keywords...">
+                </div>
+                <div class="col-md-4">
+                    <label for="category" class="form-label">Category</label>
+                    <select class="form-select" id="category" name="category">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat }}" {% if cat == current_category %}selected{% endif %}>
+                            {{ cat.replace('_', ' ').title() }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Info -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            {% if search or current_category %}
+            <p class="text-muted mb-0">
+                Showing {{ articles.total }} results
+                {% if search %}for "{{ search }}"{% endif %}
+                {% if current_category %}in {{ current_category.replace('_', ' ').title() }}{% endif %}
+            </p>
+            {% else %}
+            <p class="text-muted mb-0">{{ articles.total }} articles available</p>
+            {% endif %}
+        </div>
+        {% if search or current_category %}
+        <a href="{{ url_for('articles') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-times me-1"></i>Clear Filters
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Articles Grid -->
+    {% if articles.items %}
+    <div class="row">
+        {% for article in articles.items %}
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100 shadow-sm article-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-primary">{{ article.category.replace('_', ' ').title() }}</span>
+                        <small class="text-muted">
+                            <i class="fas fa-download me-1"></i>{{ article.download_count }}
+                        </small>
+                    </div>
+                    
+                    <h5 class="card-title">
+                        <a href="{{ url_for('article_detail', id=article.id) }}" 
+                           class="text-decoration-none text-dark">
+                            {{ article.title }}
+                        </a>
+                    </h5>
+                    
+                    <p class="card-text text-muted small">
+                        {{ article.abstract[:200] }}...
+                    </p>
+                    
+                    {% if article.keywords %}
+                    <div class="mb-3">
+                        {% for keyword in article.keywords.split(',')[:3] %}
+                        <span class="badge bg-light text-dark me-1">#{{ keyword.strip() }}</span>
+                        {% endfor %}
+                        {% if article.keywords.split(',')|length > 3 %}
+                        <span class="text-muted small">+{{ article.keywords.split(',')|length - 3 }} more</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>{{ article.author.full_name }}
+                            </small>
+                            <br>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>{{ article.submitted_at.strftime('%b %d, %Y') }}
+                            </small>
+                        </div>
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('article_detail', id=article.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i>View
+                            </a>
+                            <a href="{{ url_for('download_article', id=article.id) }}" 
+                               class="btn btn-sm btn-primary">
+                                <i class="fas fa-download me-1"></i>Download
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <small class="text-muted">
+                        <i class="fas fa-file-pdf me-1"></i>PDF • {{ format_file_size(article.file_size) }}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if articles.pages > 1 %}
+    <nav aria-label="Article pagination">
+        <ul class="pagination justify-content-center">
+            {% if articles.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('articles', page=articles.prev_num, search=search, category=current_category) }}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+            </li>
+            {% endif %}
+
+            {% for page_num in articles.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num != articles.page %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('articles', page=page_num, search=search, category=current_category) }}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% endif %}
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">…</span>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if articles.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('articles', page=articles.next_num, search=search, category=current_category) }}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <!-- No Articles Found -->
+    <div class="text-center py-5">
+        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">No articles found</h4>
+        {% if search or current_category %}
+        <p class="text-muted">Try adjusting your search criteria or browse all articles.</p>
+        <a href="{{ url_for('articles') }}" class="btn btn-primary">
+            <i class="fas fa-list me-2"></i>Browse All Articles
+        </a>
+        {% else %}
+        <p class="text-muted">Be the first to contribute to our knowledge base!</p>
+        {% if current_user.is_authenticated and current_user.role in ['author', 'admin'] %}
+        <a href="{{ url_for('submit_article') }}" class="btn btn-success">
+            <i class="fas fa-plus me-2"></i>Submit First Article
+        </a>
+        {% else %}
+        <a href="{{ url_for('register') }}" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i>Join to Contribute
+        </a>
+        {% endif %}
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-submit form on category change
+document.getElementById('category').addEventListener('change', function() {
+    this.form.submit();
+});
+</script>
+{% endblock %}

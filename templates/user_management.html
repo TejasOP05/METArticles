@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - MET Articles{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-users-cog me-2 text-primary"></i>User Management
+        </h2>
+        <div class="badge bg-primary fs-6">
+            Supervisor Panel
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-edit fa-2x mb-2"></i>
+                    <h4>{{ authors|length }}</h4>
+                    <small>Authors</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-shield fa-2x mb-2"></i>
+                    <h4>{{ supervisors|length }}</h4>
+                    <small>Supervisors & Admins</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-plus fa-2x mb-2"></i>
+                    <h4>{{ authors|length + supervisors|length }}</h4>
+                    <small>Total Users</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Authors Section -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-info text-white">
+            <h4 class="mb-0">
+                <i class="fas fa-user-edit me-2"></i>Authors ({{ authors|length }})
+            </h4>
+            <small>Promote authors to supervisor role</small>
+        </div>
+        <div class="card-body">
+            {% if authors %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>User Details</th>
+                            <th>Contact</th>
+                            <th>Joined</th>
+                            <th>Articles</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for author in authors %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-primary text-white me-3">
+                                        {{ author.first_name[0] if author.first_name else author.username[0] }}
+                                    </div>
+                                    <div>
+                                        <strong>{{ author.full_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">@{{ author.username }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <i class="fas fa-envelope me-1"></i>{{ author.email }}
+                            </td>
+                            <td>
+                                {{ author.created_at.strftime('%b %d, %Y') }}
+                                <br>
+                                <small class="text-muted">{{ author.created_at.strftime('%I:%M %p') }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ author.articles|length }} articles</span>
+                            </td>
+                            <td>
+                                {% if author.active_status %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Active
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times me-1"></i>Inactive
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="POST" action="{{ url_for('promote_user', user_id=author.id) }}" 
+                                      onsubmit="return confirm('Are you sure you want to promote {{ author.full_name }} to supervisor role?')" 
+                                      class="d-inline">
+                                    <button type="submit" class="btn btn-success btn-sm" title="Promote to Supervisor">
+                                        <i class="fas fa-arrow-up me-1"></i>Promote
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-user-edit fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No authors found</h5>
+                <p class="text-muted">All users are already supervisors or admins.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Current Supervisors Section -->
+    <div class="card shadow">
+        <div class="card-header bg-warning text-white">
+            <h4 class="mb-0">
+                <i class="fas fa-user-shield me-2"></i>Current Supervisors & Admins ({{ supervisors|length }})
+            </h4>
+            <small>Manage existing supervisors</small>
+        </div>
+        <div class="card-body">
+            {% if supervisors %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>User Details</th>
+                            <th>Role</th>
+                            <th>Contact</th>
+                            <th>Joined</th>
+                            <th>Articles</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for supervisor in supervisors %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-warning text-white me-3">
+                                        {{ supervisor.first_name[0] if supervisor.first_name else supervisor.username[0] }}
+                                    </div>
+                                    <div>
+                                        <strong>{{ supervisor.full_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">@{{ supervisor.username }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if supervisor.role == 'admin' %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-crown me-1"></i>Admin
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-user-shield me-1"></i>Supervisor
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <i class="fas fa-envelope me-1"></i>{{ supervisor.email }}
+                            </td>
+                            <td>
+                                {{ supervisor.created_at.strftime('%b %d, %Y') }}
+                                <br>
+                                <small class="text-muted">{{ supervisor.created_at.strftime('%I:%M %p') }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ supervisor.articles|length }} articles</span>
+                            </td>
+                            <td>
+                                {% if current_user.is_admin() and supervisor.id != current_user.id and supervisor.role != 'admin' %}
+                                <form method="POST" action="{{ url_for('demote_user', user_id=supervisor.id) }}" 
+                                      onsubmit="return confirm('Are you sure you want to demote {{ supervisor.full_name }} to author role?')" 
+                                      class="d-inline">
+                                    <button type="submit" class="btn btn-outline-warning btn-sm" title="Demote to Author">
+                                        <i class="fas fa-arrow-down me-1"></i>Demote
+                                    </button>
+                                </form>
+                                {% elif supervisor.id == current_user.id %}
+                                <span class="text-muted small">You</span>
+                                {% else %}
+                                <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-user-shield fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No supervisors found</h5>
+                <p class="text-muted">No users have supervisor or admin privileges.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Information Panel -->
+    <div class="card shadow mt-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="fas fa-info-circle me-2 text-info"></i>User Management Guidelines
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary">Promoting Authors to Supervisors:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i>Only supervisors and admins can promote users</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Authors gain access to approval dashboard</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Supervisors can review and approve articles</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Promoted users retain all author privileges</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-warning">Demoting Supervisors:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-exclamation-triangle text-warning me-2"></i>Only admins can demote supervisors</li>
+                        <li><i class="fas fa-exclamation-triangle text-warning me-2"></i>Cannot demote yourself</li>
+                        <li><i class="fas fa-exclamation-triangle text-warning me-2"></i>Cannot demote other admins</li>
+                        <li><i class="fas fa-exclamation-triangle text-warning me-2"></i>Demoted users become regular authors</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+</style>
+{% endblock %}
+
