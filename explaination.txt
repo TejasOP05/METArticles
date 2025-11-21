@@ -1,0 +1,90 @@
+Reviewing key files to understand the project structure and functionality.
+
+
+[6 tools called]
+
+Reading routes and forms to understand functionality:
+
+
+[3 tools called]
+
+Trying a different approach to understand the project structure:
+
+
+[4 tools called]
+
+Based on the files reviewed, here's an overview of the **MetArticles** project:
+
+## Project Overview
+
+MetArticles is a Flask web application for submitting, reviewing, and managing academic/research articles. It supports a role-based workflow with authors, supervisors, and administrators.
+
+## Key Components
+
+### 1. **Technology Stack**
+- Flask — web framework
+- SQLAlchemy — database ORM
+- Flask-Login — authentication
+- SQLite — database (with PostgreSQL/Neon support)
+- Werkzeug — password hashing and utilities
+
+### 2. **User Roles**
+- Author: submit articles
+- Supervisor: review and approve/reject
+- Admin: full access, including user management
+
+### 3. **Core Features** (from models and templates)
+
+**User Management:**
+- Registration and login
+- Password change
+- Role-based access control
+- User management dashboard (admin)
+
+**Article Management:**
+- Submit articles with PDF uploads (max 16MB)
+- Articles include: title, abstract, keywords, category
+- Status tracking: pending, approved, rejected
+- Download tracking
+- Comments/reviews on articles
+
+**Workflow:**
+- Authors submit articles
+- Supervisors review and approve/reject
+- Tracking of submission and review timestamps
+- Approval dashboard for supervisors
+
+### 4. **Project Structure**
+
+```
+MetArticles/
+├── app.py              # Flask app initialization, DB config
+├── main.py             # Entry point
+├── models.py           # User, Article, ArticleComment models
+├── routes.py           # Application routes/endpoints
+├── forms.py            # WTForms for user input
+├── utils.py            # Helper functions
+├── templates/          # HTML templates
+│   ├── Base template
+│   ├── Login/Register
+│   ├── Article submission/review
+│   ├── User management
+│   └── Error pages
+├── static/             # CSS, JS, images
+└── uploads/            # PDF article storage
+```
+
+### 5. **Database Models**
+
+- **User**: username, email, password (hashed), role, name, active status
+- **Article**: title, abstract, keywords, category, file info, status, author, reviewer
+- **ArticleComment**: comments/reviews on articles
+
+### 6. **Security Features**
+- Password hashing (Werkzeug)
+- Session management with secret key
+- CSRF protection
+- File upload size limits
+- Role-based access control
+
+The project appears to be an article submission and review system, likely for academic or research publications, with a workflow for authors to submit and supervisors to review articles.

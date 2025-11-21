@@ -1,0 +1,35 @@
+app = "met-articles"
+primary_region = "iad"
+
+[build]
+
+[env]
+  PORT = "8080"
+  # Set this in Fly secrets later
+  # SESSION_SECRET = ""
+
+[[mounts]]
+  source = "metarticles_data"
+  destination = "/data"
+
+[[services]]
+  internal_port = 8080
+  processes = ["app"]
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [[services.tcp_checks]]
+    grace_period = "1s"
+    interval = "15s"
+    restart_limit = 0
+    timeout = "2s"
+
+
+
